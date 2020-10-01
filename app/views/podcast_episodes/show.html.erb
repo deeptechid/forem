@@ -30,7 +30,7 @@
 
 <div class="podcast-episode-container" data-meta="<%= @episode.decorate.mobile_player_metadata.to_json %>">
   <div class="hero">
-    <% image_url = Images::Optimizer.call(@podcast.pattern_image_url || "https://i.imgur.com/fKYKgo4.png", fetch_format: "jpg", crop: nil) %>
+    <% image_url = Images::Optimizer.call(@podcast.pattern_image_url || "https://i.imgur.com/csRauLJ.jpeg", fetch_format: "jpg", crop: nil) %>
     <div class="title" style="background:#<%= @podcast.main_color_hex %> url(<%= image_url %>)">
       <h2>
         <a href="/<%= @podcast.slug %>">
