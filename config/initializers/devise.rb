@@ -7,6 +7,7 @@ GITHUB_OMNIUATH_SETUP = lambda do |env|
   env["omniauth.strategy"].options[:client_id] = SiteConfig.github_key
   env["omniauth.strategy"].options[:client_secret] = SiteConfig.github_secret
   env["omniauth.strategy"].options[:scope] = "user:email"
+  env["omniauth.strategy"].options[:redirect_uri] = "#{ApplicationConfig['APP_PROTOCOL']}#{ApplicationConfig['APP_DOMAIN']}/users/auth/github/callback"
 end
 
 FACEBOOK_OMNIAUTH_SETUP = lambda do |env|
