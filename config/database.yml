@@ -27,8 +27,11 @@ default: &default
 
 development:
   <<: *default
-  url: <%= ENV.fetch('DATABASE_URL', '') %>
-  database: PracticalDeveloper_development
+  host: <%= ENV['DATABASE_HOST'] %>
+  database: <%= ENV['DATABASE_NAME'] %>
+  pool: <%= ENV['DATABASE_POOL_SIZE'] %>
+  username: <%= ENV['DATABASE_USERNAME'] %>
+  password: <%= ENV['DATABASE_PASSWORD'] %>
   variables:
       statement_timeout: <%= ENV.fetch('STATEMENT_TIMEOUT', 10_000).to_i %>
 
@@ -64,8 +67,11 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  url: <%= ENV['DATABASE_URL_TEST'] || ENV['DATABASE_URL'] || ''%>
-  database: PracticalDeveloper_test<%= ENV['TEST_ENV_NUMBER'] %>
+  host: <%= ENV['DATABASE_HOST'] %>
+  database: <%= ENV['DATABASE_NAME'] %>_test
+  pool: <%= ENV['DATABASE_POOL_SIZE'] %>
+  username: <%= ENV['DATABASE_USERNAME'] %>
+  password: <%= ENV['DATABASE_PASSWORD'] %>
   variables:
       statement_timeout: <%= ENV.fetch('STATEMENT_TIMEOUT', 10_000).to_i %>
 
@@ -90,7 +96,8 @@ test:
 #
 production:
   <<: *default
-  database: PracticalDeveloper_production
+  host: <%= ENV['DATABASE_HOST'] %>
+  database: <%= ENV['DATABASE_NAME'] %>
   pool: <%= ENV['DATABASE_POOL_SIZE'] %>
-  username: PracticalDeveloper
-  password: <%= ENV['PRACTICALDEVELOPER_DATABASE_PASSWORD'] %>
+  username: <%= ENV['DATABASE_USERNAME'] %>
+  password: <%= ENV['DATABASE_PASSWORD'] %>
