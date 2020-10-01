@@ -1,6 +1,6 @@
 Datadog.configure do |c|
   c.tracer env: Rails.env
-  c.tracer enabled: ENV["DD_API_KEY"].present?
+  c.tracer enabled: false
   c.tracer partial_flush: true
   c.tracer priority_sampling: true
   c.use :elasticsearch
