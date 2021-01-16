@@ -34,6 +34,7 @@ module Images
     DEFAULT_IMGPROXY_OPTIONS = {
       height: nil,
       width: nil,
+      max_bytes: 500_000, # Keep everything under half of one MB.
       resizing_type: nil
     }.freeze
 
@@ -66,7 +67,7 @@ module Images
         # On other environments, rely on ApplicationConfig for a
         # more flexible configuration
         # ie. default imgproxy endpoint is localhost:8080
-        ApplicationConfig["IMGPROXY_ENDPOINT"]
+        ApplicationConfig["IMGPROXY_ENDPOINT"] || "http://localhost:8080"
       end
     end
   end

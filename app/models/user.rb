@@ -10,7 +10,6 @@ class User < ApplicationRecord
     available_for
     behance_url
     bg_color_hex
-    contact_consent
     currently_hacking_on
     currently_learning
     currently_streaming_on
@@ -25,8 +24,6 @@ class User < ApplicationRecord
     instagram_url
     linkedin_url
     location
-    looking_for_work
-    looking_for_work_publicly
     mastodon_url
     medium_url
     mostly_work_with
@@ -141,7 +138,6 @@ class User < ApplicationRecord
   has_many :display_ad_events, dependent: :destroy
   has_many :email_authorizations, dependent: :delete_all
   has_many :email_messages, class_name: "Ahoy::Message", dependent: :destroy
-  has_many :endorsements, dependent: :destroy, class_name: "ListingEndorsement"
   has_many :field_test_memberships, class_name: "FieldTest::Membership", as: :participant, dependent: :destroy
   has_many :github_repos, dependent: :destroy
   has_many :html_variants, dependent: :destroy
@@ -213,7 +209,7 @@ class User < ApplicationRecord
   validates :inbox_type, inclusion: { in: INBOXES }
   validates :name, length: { in: 1..100 }
   validates :password, length: { in: 8..100 }, allow_nil: true
-  validates :payment_pointer, format: PAYMENT_POINTER_REGEXP, allow_nil: true
+  validates :payment_pointer, format: PAYMENT_POINTER_REGEXP, allow_blank: true
   validates :rating_votes_count, presence: true
   validates :reactions_count, presence: true
   validates :sign_in_count, presence: true
@@ -489,8 +485,8 @@ class User < ApplicationRecord
   def resave_articles
     articles.find_each do |article|
       if article.path
-        CacheBuster.bust(article.path)
-        CacheBuster.bust("#{article.path}?i=i")
+        EdgeCache::Bust.call(article.path)
+        EdgeCache::Bust.call("#{article.path}?i=i")
       end
       article.save
     end
@@ -503,7 +499,7 @@ class User < ApplicationRecord
   def unsubscribe_from_newsletters
     return if email.blank?
 
-    MailchimpBot.new(self).unsubscribe_all_newsletters
+    Mailchimp::Bot.new(self).unsubscribe_all_newsletters
   end
 
   def auditable?
@@ -534,7 +530,10 @@ class User < ApplicationRecord
   end
 
   def authenticated_with_all_providers?
-    identities_enabled.pluck(:provider).map(&:to_sym) == Authentication::Providers.enabled
+    # ga_providers refers to Generally Available (not in beta)
+    ga_providers = Authentication::Providers.enabled.reject { |sym| sym == :apple }
+    enabled_providers = identities.pluck(:provider).map(&:to_sym)
+    (ga_providers - enabled_providers).empty?
   end
 
   def rate_limiter
@@ -623,11 +622,7 @@ class User < ApplicationRecord
   def validate_feed_url
     return if feed_url.blank?
 
-    valid = if FeatureFlag.enabled?(:feeds_import)
-              Feeds::ValidateUrl.call(feed_url)
-            else
-              RssReader.new.valid_feed_url?(feed_url)
-            end
+    valid = Feeds::ValidateUrl.call(feed_url)
 
     errors.add(:feed_url, "is not a valid RSS/Atom feed") unless valid
   rescue StandardError => e
@@ -654,6 +649,8 @@ class User < ApplicationRecord
     return unless persisted?
 
     index_to_elasticsearch_inline
+  rescue StandardError => e
+    Honeybadger.notify(e, context: { user_id: id })
   end
 
   def can_send_confirmation_email

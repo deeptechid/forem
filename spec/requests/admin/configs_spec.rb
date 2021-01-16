@@ -74,7 +74,7 @@ RSpec.describe "/admin/config", type: :request do
 
       describe "Authentication" do
         it "updates enabled authentication providers" do
-          enabled = Authentication::Providers.available.first.to_s
+          enabled = Authentication::Providers.available.last.to_s
           post admin_config_path, params: {
             site_config: {
               "#{enabled}_key": "someKey",
@@ -87,7 +87,7 @@ RSpec.describe "/admin/config", type: :request do
         end
 
         it "strips empty elements" do
-          provider = Authentication::Providers.available.first.to_s
+          provider = Authentication::Providers.available.last.to_s
           enabled = "#{provider}, '', nil"
           post admin_config_path, params: {
             site_config: {
@@ -118,6 +118,13 @@ RSpec.describe "/admin/config", type: :request do
           post "/admin/config", params: { site_config: { allowed_registration_email_domains: proper_list },
                                           confirmation: confirmation_message }
           expect(SiteConfig.allowed_registration_email_domains).to eq(%w[dev.to forem.com forem.dev])
+        end
+
+        it "allows 2-character domains" do
+          proper_list = "dev.to, forem.com, 2u.com"
+          post "/admin/config", params: { site_config: { allowed_registration_email_domains: proper_list },
+                                          confirmation: confirmation_message }
+          expect(SiteConfig.allowed_registration_email_domains).to eq(%w[dev.to forem.com 2u.com])
         end
 
         it "does not allow improper domain list" do
@@ -191,13 +198,6 @@ RSpec.describe "/admin/config", type: :request do
           post "/admin/config", params: { site_config: { community_name: name_magoo },
                                           confirmation: confirmation_message }
           expect(SiteConfig.community_name).to eq(name_magoo)
-        end
-
-        it "updates the collective_noun" do
-          collective_noun = "Rhumba"
-          post "/admin/config", params: { site_config: { collective_noun: collective_noun },
-                                          confirmation: confirmation_message }
-          expect(SiteConfig.collective_noun).to eq(collective_noun)
         end
 
         it "updates the community_member_label" do
@@ -712,7 +712,7 @@ RSpec.describe "/admin/config", type: :request do
           expect do
             post "/admin/config", params: { site_config: { rate_limit_user_update: 3 },
                                             confirmation: confirmation_message }
-          end.to change(SiteConfig, :rate_limit_user_update).from(5).to(3)
+          end.to change(SiteConfig, :rate_limit_user_update).to(3)
         end
 
         it "updates rate_limit_feedback_message_creation" do
@@ -807,6 +807,12 @@ RSpec.describe "/admin/config", type: :request do
           post "/admin/config", params: { site_config: { sidebar_tags: "hey, haha,hoHo, Bobo Fofo" },
                                           confirmation: confirmation_message }
           expect(SiteConfig.sidebar_tags).to eq(%w[hey haha hoho bobofofo])
+        end
+
+        it "creates tags if they do not exist" do
+          post "/admin/config", params: { site_config: { sidebar_tags: "bobofogololo, spla, bla" },
+                                          confirmation: confirmation_message }
+          expect(Tag.find_by(name: "bobofogololo")).to be_valid
         end
       end
 
